@@ -198,7 +198,7 @@ body.no-glass .glass-1,body.no-glass .glass-2,body.no-glass .glass-3{background:
 .eq-bars{display:flex;align-items:center;gap:2px;height:14px;flex:none;}
 .eq-bars span{width:3px;background:var(--accent);border-radius:2px;animation:eq 1s ease-in-out infinite;}
 .eq-bars span:nth-child(2){animation-delay:.2s;}.eq-bars span:nth-child(3){animation-delay:.4s;}
-@keyframes eq{0%,100%{height:4px;}50%{height:14px;}}
+@keyframes eqAlt{0%,100%{height:4px;}50%{height:14px;}}   /* duplicate naam tha; 7323 wala jeetta hai */
 .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:var(--r-full);font-weight:700;font-size:13.5px;transition:transform .18s var(--ease-spring),background .2s,box-shadow .2s;cursor:pointer;}
 .btn-primary{background:var(--accent);color:#fff;box-shadow:0 8px 24px var(--accent-soft);}
 .btn-primary:hover{box-shadow:0 10px 30px var(--accent-soft);}
@@ -357,7 +357,7 @@ body.playing-anim .fp-art-wrap{animation:artBreathe 6s ease-in-out infinite;}
 .toggle.on{background:var(--accent);}
 .toggle.on::after{transform:translateX(19px);}
 .segmented{display:flex;background:var(--glass-1-bg);border-radius:var(--r-full);padding:3px;gap:2px;}
-.seg-opt{padding:6px 13px;border-radius:99px;font-size:12.5px;font-weight:700;color:var(--text-3);transition:all .25s var(--ease-spring);cursor:pointer;}
+.seg-opt{padding:6px 13px;border-radius:99px;font-size:12.5px;font-weight:700;color:var(--text-3);transition:background-color .25s var(--ease-spring),color .25s var(--ease-spring),border-color .25s var(--ease-spring),box-shadow .25s var(--ease-spring),transform .25s var(--ease-spring),opacity .25s var(--ease-spring);cursor:pointer;}
 .seg-opt.active{background:var(--accent);color:#fff;box-shadow:0 4px 12px var(--accent-soft);}
 .slider-row input[type=range]{width:120px;}
 input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:99px;background:rgba(140,140,160,.3);cursor:pointer;}
@@ -370,7 +370,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .search-bar input::placeholder{color:var(--text-3);}
 .search-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:18px;-webkit-overflow-scrolling:touch;}
 .search-tabs::-webkit-scrollbar{height:0;}
-.stab{padding:8px 16px;border-radius:99px;font-size:13px;font-weight:700;color:var(--text-2);flex:none;transition:all .22s var(--ease-smooth);cursor:pointer;}
+.stab{padding:8px 16px;border-radius:99px;font-size:13px;font-weight:700;color:var(--text-2);flex:none;transition:background-color .22s var(--ease-smooth),color .22s var(--ease-smooth),border-color .22s var(--ease-smooth),box-shadow .22s var(--ease-smooth),transform .22s var(--ease-smooth),opacity .22s var(--ease-smooth);cursor:pointer;}
 .stab.active{background:var(--accent);color:#fff;}
 .stab:not(.active):hover{background:var(--glass-1-bg);}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:99px;font-size:12.5px;font-weight:600;background:var(--glass-1-bg);border:1px solid var(--glass-1-brd);color:var(--text-2);margin:0 8px 8px 0;}
@@ -416,7 +416,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .crossfade-row{flex-direction:column;align-items:stretch;gap:12px;}
 .crossfade-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .crossfade-controls{display:flex;align-items:center;gap:8px;flex:none;}
-.crossfade-off-btn{padding:7px 13px;font-size:11.5px;border-radius:99px;font-weight:700;background:var(--glass-1-bg);border:1px solid var(--glass-1-brd);color:var(--text-2);cursor:pointer;transition:all .2s var(--ease-smooth);}
+.crossfade-off-btn{padding:7px 13px;font-size:11.5px;border-radius:99px;font-weight:700;background:var(--glass-1-bg);border:1px solid var(--glass-1-brd);color:var(--text-2);cursor:pointer;transition:background-color .2s var(--ease-smooth),color .2s var(--ease-smooth),border-color .2s var(--ease-smooth),box-shadow .2s var(--ease-smooth),transform .2s var(--ease-smooth),opacity .2s var(--ease-smooth);}
 .crossfade-off-btn.active{background:var(--danger);color:#fff;border-color:transparent;}
 .crossfade-scale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-3);margin-top:2px;padding:0 2px;}
 html,body{max-width:100vw;overflow-x:hidden;}
@@ -630,6 +630,10 @@ body{overscroll-behavior-y:none;}
 .row-list>.row-item{content-visibility:auto;contain-intrinsic-size:auto 64px;}
 @media (hover:none){.row-item:hover{transform:none;}}
 </style>
+<style id="bos-perf-budget">
+/* perf: offscreen home sections skip layout+paint until they are near the viewport */
+#view-home > .section{content-visibility:auto;contain-intrinsic-size:auto 360px}
+</style>
 </head>
 <body data-theme="dark">
 
@@ -698,7 +702,7 @@ body{overscroll-behavior-y:none;}
 </div>
 
 <div id="mini-player" class="glass-3">
-  <div class="mini-art" id="mini-art-wrap"><img id="mini-art" src="" alt="" loading="lazy"></div>
+  <div class="mini-art" id="mini-art-wrap"><img loading="lazy" decoding="async" id="mini-art" src="" alt="" loading="lazy"></div>
   <div class="mini-info" id="mini-info">
     <div class="mini-title" id="mini-title">No track playing</div>
     <button class="mini-artist" id="mini-artist" data-action="open-current-artist" type="button">Search to start listening</button>
@@ -725,7 +729,7 @@ body{overscroll-behavior-y:none;}
       <button class="icon-btn" id="fp-queue-open" style="color:#fff;" aria-label="Open queue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13M3 12h13M3 18h9"/><path d="M18 15l3 3-3 3"/></svg></button>
     </div>
     <div class="fp-body">
-      <div class="fp-art-wrap"><img id="fp-art" src="" alt=""></div>
+      <div class="fp-art-wrap"><img loading="lazy" decoding="async" id="fp-art" src="" alt=""></div>
       <div class="fp-meta">
         <div class="fp-meta-text">
           <div class="fp-title" id="fp-title">—</div>
@@ -759,7 +763,7 @@ body{overscroll-behavior-y:none;}
 
   <div id="lyrics-view">
     <div class="ly-hd" id="ly-hd">
-      <img class="ly-thumb" id="ly-thumb" alt="">
+      <img loading="lazy" decoding="async" class="ly-thumb" id="ly-thumb" alt="">
       <div class="ly-meta" id="ly-meta"><div class="ly-title" id="ly-title"></div><div class="ly-artist" id="ly-artist"></div></div>
       <button class="ly-btn" id="ly-heart" type="button" aria-label="Favorite"></button>
       <button class="ly-btn" id="ly-back" type="button" aria-label="Back to player"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -810,7 +814,7 @@ body{overscroll-behavior-y:none;}
 <audio id="audio-el" preload="auto" crossorigin="anonymous" playsinline></audio>
 <audio id="audio-el-2" preload="auto" crossorigin="anonymous" playsinline></audio>
 
-<script defer src="lyrics.js"></script>
+<!-- lyrics.js repo me nahi hai (404). Optional feature hai: line 2469 window.MY_LYRICS||[] use karta hai, so safe. -->
 <script>
 (function(){
 "use strict";
@@ -818,8 +822,12 @@ body{overscroll-behavior-y:none;}
    BOOSTER OS — APPLICATION LOGIC (v2 — full audit rebuild)
    ============================================================ */
 
-const MUSIC_API = "https://" + String.fromCharCode(106,105,111,115,97,97,118,110) + "-api.raj-pawar091206.workers.dev/api";
-const FALLBACK_ART = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23222230'/%3E%3Cpath d='M100 60a30 30 0 1 0 30 30h-10a20 20 0 1 1-20-20z' fill='%23555570'/%3E%3C/svg%3E";
+/* MUSIC_HOSTS: ek se zyada host allowed. apiFetch fail hone par agle host pe retry karta hai. */
+const MUSIC_HOSTS = ["https://" + String.fromCharCode(106,105,111,115,97,97,118,110) + "-api.raj-pawar091206.workers.dev/api"];
+let MUSIC_HOST_IX = 0;
+let MUSIC_API = MUSIC_HOSTS[MUSIC_HOST_IX];
+/* no quotes/spaces at all: this URI is injected into inline onerror="this.src='...'" handlers */
+const FALLBACK_ART = "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20200%20200%22%3E%3Crect%20width=%22200%22%20height=%22200%22%20fill=%22%23222230%22/%3E%3Cpath%20d=%22M100%2060a30%2030%200%201%200%2030%2030h-10a20%2020%200%201%201-20-20z%22%20fill=%22%23555570%22/%3E%3C/svg%3E";
 const QUALITY_ORDER = ["12","48","96","160","320"];
 const LS_PREFIX = "boosterOS_";
 
@@ -884,7 +892,21 @@ async function apiFetch(url, cacheKey, ttlMs, signal){
     const ctl=new AbortController(),timeout=setTimeout(()=>ctl.abort(),12000);
     const onAbort=()=>{try{ctl.abort();}catch(_){}};
     if(signal){if(signal.aborted)throw {name:"AbortError"};signal.addEventListener("abort",onAbort,{once:true});}
-    try{res=await fetch(url,{method:"GET",signal:ctl.signal});if(res.status>=500&&!ctl.signal.aborted){await new Promise(r=>setTimeout(r,700));res=await fetch(url,{method:"GET",signal:ctl.signal});}}
+    try{
+      /* host fallback: sirf ek host ho to behaviour bilkul pehle jaisa rehta hai */
+      const order=MUSIC_HOSTS.slice(MUSIC_HOST_IX).concat(MUSIC_HOSTS.slice(0,MUSIC_HOST_IX));
+      let lastErr=null;
+      for(let hi=0;hi<order.length;hi++){
+        const u=hi===0?url:url.replace(MUSIC_HOSTS[0],order[hi]);
+        try{
+          res=await fetch(u,{method:"GET",signal:ctl.signal});
+          if(res.status>=500&&!ctl.signal.aborted){await new Promise(r=>setTimeout(r,700));res=await fetch(u,{method:"GET",signal:ctl.signal});}
+          if(res.ok||res.status<500||hi===order.length-1)break;   /* 4xx: doosre host pe bhi wahi response aayega */
+          lastErr={name:"http",status:res.status};
+        }catch(errOne){ lastErr=errOne; if(ctl.signal.aborted||(signal&&signal.aborted))throw errOne; }
+      }
+      if(!res)throw lastErr||{name:"NetworkError"};
+    }
     finally{clearTimeout(timeout);if(signal)signal.removeEventListener("abort",onAbort);}
   }catch(err){
     if(err&&(err.name==="AbortError"||(signal&&signal.aborted)))throw {type:"aborted",message:"Request cancelled.",raw:err};
@@ -1839,13 +1861,15 @@ async function lyJSON(url,signal,ms,retry){
   return null;
 }
 /* CORS-proxy race: for sources that block browsers (or ISPs that block lrclib.net) — first proxy that answers wins */
-const LY_PROXIES=[u=>"https://corsproxy.io/?url="+encodeURIComponent(u),u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u),u=>"https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(u)];
+/* corsproxy.io hata diya (ab 401 deta hai). lrclib/lyrics.ovh direct chalte hain, proxy sirf fallback. */
+const LY_PROXIES=[u=>"https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(u),u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u)];
 function lyProxyJSON(url,signal,ms){
-  return new Promise((resolve,reject)=>{
+  return new Promise(resolve=>{
     let left=LY_PROXIES.length, done=false;
+    const fin=v=>{ if(!done){ done=true; resolve(v); } };      /* pehle ek reject pura race maar deta tha */
     LY_PROXIES.forEach(px=>{
-      lyJSON(px(url),signal,ms||8000).then(j=>{ if(done) return; if(j){ done=true; resolve(j); } else if(--left<=0){ done=true; resolve(null); } },
-        e=>{ if(done) return; done=true; reject(e); });
+      lyJSON(px(url),signal,ms||8000).then(j=>{ if(j) fin(j); else if(--left<=0) fin(null); },
+        ()=>{ if(--left<=0) fin(null); });
     });
   });
 }
@@ -2691,18 +2715,18 @@ function skeletonCards(n){ let h=""; for(let i=0;i<n;i++) h+='<div class="skel-c
 function skeletonRows(n){ let h=""; for(let i=0;i<n;i++) h+='<div class="skel-row"><div class="skel skel-art"></div><div class="skel skel-line" style="width:60%"></div></div>'; return h; }
 function songCard(t){
   return '<div class="card" data-action="play-song" data-id="'+esc(t.id)+'">'
-    +'<div class="card-art"><img src="'+esc(t.image)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt="">'
+    +'<div class="card-art"><img loading="lazy" decoding="async" src="'+esc(t.image)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt="">'
     +'<button class="card-play" data-action="play-song" data-id="'+esc(t.id)+'" aria-label="Play">'+svgPlay()+'</button></div>'
     +'<div class="card-title">'+esc(t.name)+'</div><div class="card-sub">'+esc(t.artistName)+'</div></div>';
 }
-function albumCard(a){ return '<div class="card" data-action="open-album" data-id="'+esc(a.id)+'"><div class="card-art"><img src="'+esc(a.image)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div><div class="card-title">'+esc(a.name)+'</div><div class="card-sub">'+esc(a.artistName||a.year||"Album")+'</div></div>'; }
-function artistCard(a){ return '<div class="card" data-action="open-artist" data-id="'+esc(a.id)+'"><div class="card-art round"><img src="'+esc(a.image)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div><div class="card-title" style="text-align:center">'+esc(a.name)+'</div><div class="card-sub" style="text-align:center">Artist</div></div>'; }
-function playlistCard(p){ return '<div class="card" data-action="open-playlist" data-id="'+esc(p.id)+'"><div class="card-art"><img src="'+esc(p.image)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div><div class="card-title">'+esc(p.name)+'</div><div class="card-sub">'+(p.songCount||0)+' songs</div></div>'; }
+function albumCard(a){ return '<div class="card" data-action="open-album" data-id="'+esc(a.id)+'"><div class="card-art"><img loading="lazy" decoding="async" src="'+esc(a.image)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div><div class="card-title">'+esc(a.name)+'</div><div class="card-sub">'+esc(a.artistName||a.year||"Album")+'</div></div>'; }
+function artistCard(a){ return '<div class="card" data-action="open-artist" data-id="'+esc(a.id)+'"><div class="card-art round"><img loading="lazy" decoding="async" src="'+esc(a.image)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div><div class="card-title" style="text-align:center">'+esc(a.name)+'</div><div class="card-sub" style="text-align:center">Artist</div></div>'; }
+function playlistCard(p){ return '<div class="card" data-action="open-playlist" data-id="'+esc(p.id)+'"><div class="card-art"><img loading="lazy" decoding="async" src="'+esc(p.image)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div><div class="card-title">'+esc(p.name)+'</div><div class="card-sub">'+(p.songCount||0)+' songs</div></div>'; }
 function songRow(t,i,opts){
   opts = opts||{};
   const playing = State.currentTrack && State.currentTrack.id===t.id;
   return '<div class="row-item'+(playing?" playing":"")+'" data-action="play-song" data-id="'+esc(t.id)+'" data-ctx="'+esc(opts.ctxKey||"")+'">'
-    +'<div class="row-art"><img src="'+esc(t.image)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div>'
+    +'<div class="row-art"><img loading="lazy" decoding="async" src="'+esc(t.image)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div>'
     +'<div class="row-meta"><div class="row-title">'+esc(t.name)+'</div><div class="row-sub">'+esc(t.artistName)+'</div></div>'
     +(playing && State.isPlaying ? '<div class="eq-bars"><span></span><span></span><span></span></div>' : '')
     +'<button class="ctrl-btn heart-btn'+(Favorites.isSongFav(t.id)?" active":"")+'" data-action="toggle-fav-song" data-id="'+esc(t.id)+'" aria-label="Favorite">'+svgHeart(Favorites.isSongFav(t.id))+'</button>'
@@ -2908,11 +2932,11 @@ function ytCardsHTML(list,kind){
     const title=kind==="channel"?x.author:x.title, img=ytArt(x);
     const sub=kind==="channel"?(x.subCount?ytFmtNum(x.subCount)+" subscribers":"Artist"):((x.author||"")+(x.videoCount?" • "+x.videoCount+" songs":""));
     const key=kind+":"+id; State._ytCards[key]={kind:kind,id:id,title:title||"",sub:sub,img:img};
-    return '<div class="card yt-card" data-ytkey="'+esc(key)+'"><div class="card-art'+(kind==="channel"?" round":"")+'"><img src="'+esc(img)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div><div class="card-title"'+(kind==="channel"?' style="text-align:center"':'')+'>'+esc(title||"")+'</div><div class="card-sub"'+(kind==="channel"?' style="text-align:center"':'')+'>'+esc(sub)+'</div></div>';
+    return '<div class="card yt-card" data-ytkey="'+esc(key)+'"><div class="card-art'+(kind==="channel"?" round":"")+'"><img loading="lazy" decoding="async" src="'+esc(img)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div><div class="card-title"'+(kind==="channel"?' style="text-align:center"':'')+'>'+esc(title||"")+'</div><div class="card-sub"'+(kind==="channel"?' style="text-align:center"':'')+'>'+esc(sub)+'</div></div>';
   }).join("");
 }
 function ytRowsHTML(list){
-  return '<div class="row-list">'+list.map((v,i)=>'<button type="button" class="yt-res" '+(v.it?'data-bos-meta="1" ':'')+'data-yi="'+i+'" style="display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:8px;margin:0 0 8px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:inherit;font:inherit;cursor:pointer"><img src="'+(v.it?esc(v.art):'https://i.ytimg.com/vi/'+esc(v.videoId)+'/mqdefault.jpg')+'" alt="" loading="lazy" onerror="this.src=\''+FALLBACK_ART+'\'" style="width:56px;height:56px;object-fit:cover;border-radius:10px;flex:none;background:#222"><div style="min-width:0"><b style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:600">'+esc(v.title)+'</b><small style="opacity:.6">'+esc(v.author||"")+'</small></div><span role="button" tabindex="0" class="ctrl-btn song-more" data-bosmenu="yt" data-yi="'+i+'" aria-label="More options" style="margin-left:auto;flex:none">'+svgMore()+'</span></button>').join("")+'</div>';
+  return '<div class="row-list">'+list.map((v,i)=>'<button type="button" class="yt-res" '+(v.it?'data-bos-meta="1" ':'')+'data-yi="'+i+'" style="display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:8px;margin:0 0 8px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:inherit;font:inherit;cursor:pointer"><img loading="lazy" decoding="async" src="'+(v.it?esc(v.art):'https://i.ytimg.com/vi/'+esc(v.videoId)+'/mqdefault.jpg')+'" alt="" loading="lazy" onerror="this.src=\''+FALLBACK_ART+'\'" style="width:56px;height:56px;object-fit:cover;border-radius:10px;flex:none;background:#222"><div style="min-width:0"><b style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:600">'+esc(v.title)+'</b><small style="opacity:.6">'+esc(v.author||"")+'</small></div><span role="button" tabindex="0" class="ctrl-btn song-more" data-bosmenu="yt" data-yi="'+i+'" aria-label="More options" style="margin-left:auto;flex:none">'+svgMore()+'</span></button>').join("")+'</div>';
 }
 async function openYtCollection(c){
   if(!c||!window.BosYT) return;
@@ -2945,7 +2969,7 @@ function itCardsHTML(list,kind){
     const key=kind+":"+x.id, art=kind==="itArtist";
     const sub=art?"Artist":((x.artist||"")+(x.count?" \u2022 "+x.count+" songs":""));
     State._ytCards[key]={kind:kind,id:x.id,title:x.title||"",sub:sub,img:x.img||""};
-    return '<div class="card yt-card" data-ytkey="'+esc(key)+'"><div class="card-art'+(art?" round":"")+'"><img src="'+esc(x.img||FALLBACK_ART)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div><div class="card-title"'+(art?' style="text-align:center"':'')+'>'+esc(x.title||"")+'</div><div class="card-sub"'+(art?' style="text-align:center"':'')+'>'+esc(sub)+'</div></div>';
+    return '<div class="card yt-card" data-ytkey="'+esc(key)+'"><div class="card-art'+(art?" round":"")+'"><img loading="lazy" decoding="async" src="'+esc(x.img||FALLBACK_ART)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div><div class="card-title"'+(art?' style="text-align:center"':'')+'>'+esc(x.title||"")+'</div><div class="card-sub"'+(art?' style="text-align:center"':'')+'>'+esc(sub)+'</div></div>';
   }).join("");
 }
 async function runMusicSearch(q,ctl,seq,res){ return runYtSearch(q,ctl,seq,res,true); }
@@ -3165,7 +3189,7 @@ function renderQueuePanel(){
 }
 function queueRow(t,i,active){
   return '<div class="row-item'+(active?" playing":"")+'" data-action="play-queue-index" data-index="'+i+'">'
-    +'<div class="row-art"><img src="'+esc(t.image)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div>'
+    +'<div class="row-art"><img loading="lazy" decoding="async" src="'+esc(t.image)+'" onerror="this.src=\''+FALLBACK_ART+'\'" loading="lazy" alt=""></div>'
     +'<div class="row-meta"><div class="row-title">'+esc(t.name)+'</div><div class="row-sub">'+esc(t.artistName)+'</div></div>'
     +(active?'<div class="eq-bars"><span></span><span></span><span></span></div>':'<button class="ctrl-btn" data-action="remove-queue-index" data-index="'+i+'" aria-label="Remove">'+svgTrash()+'</button>')
     +'</div>';
@@ -5362,7 +5386,7 @@ function render(){
   try{ fav=!!t.id&&Favorites.isSongFav(t.id); }catch(e){}
   var src=c.kind==='yt'?'YouTube':'BOOSTER';
   var h='<div class="bos-sm-grab"><i></i></div>'
-   +'<div class="bos-sm-head"><img class="bos-sm-art" src="'+e2(t.image||FALLBACK_ART)+'" onerror="this.src=\''+FALLBACK_ART+'\'" alt="">'
+   +'<div class="bos-sm-head"><img loading="lazy" decoding="async" class="bos-sm-art" src="'+e2(t.image||FALLBACK_ART)+'" onerror="this.src=\''+FALLBACK_ART+'\'" alt="">'
    +'<div class="bos-sm-meta"><b>'+e2(t.name)+'</b><span>'+e2(t.artistName||'')+'</span></div>'
    +'<button type="button" class="bos-sm-sq" data-bsm="copy" aria-label="Copy name">'+IC.copy+'</button>'
    +'<button type="button" class="bos-sm-sq" data-bsm="info" aria-label="Info">'+IC.info+'</button>'
@@ -5582,7 +5606,7 @@ async function smartReplace(c){
   var res=$i('bos-sm-res'); if(!res) return;
   if(!repList.length){ res.textContent='No other versions found'; return; }
   res.className='bos-sm-list';
-  res.innerHTML=repList.map(function(x,i){ return '<button type="button" class="bos-sm-it bos-sm-rep" data-brep="'+i+'"><img class="bos-sm-rimg" src="'+e2(x.image||FALLBACK_ART)+'" onerror="this.src=\''+FALLBACK_ART+'\'" alt=""><span class="bos-sm-lb">'+e2(x.name)+'<small>'+e2(x.artistName||'')+(x.duration?' · '+fmt(x.duration):'')+'</small></span><span class="bos-sm-badge">'+x._src+'</span></button>'; }).join('');
+  res.innerHTML=repList.map(function(x,i){ return '<button type="button" class="bos-sm-it bos-sm-rep" data-brep="'+i+'"><img loading="lazy" decoding="async" class="bos-sm-rimg" src="'+e2(x.image||FALLBACK_ART)+'" onerror="this.src=\''+FALLBACK_ART+'\'" alt=""><span class="bos-sm-lb">'+e2(x.name)+'<small>'+e2(x.artistName||'')+(x.duration?' · '+fmt(x.duration):'')+'</small></span><span class="bos-sm-badge">'+x._src+'</span></button>'; }).join('');
 }
 async function pickReplace(i){
   var c=cur, nt=repList[i]; if(!c||!nt||busy) return; busy=true;
@@ -5836,7 +5860,7 @@ body.low-end .hscroll,.row-list{contain:content}
   position:fixed;inset:0;z-index:20000;display:none;background:#000;
   align-items:center;justify-content:center;color:#fff;
 }
-.bos-tv-mode.open{display:flex;animation:b3in .35s var(--ease-out);}
+.bos-tv-mode.open{display:flex;animation:bosV9FxIn .35s var(--ease-out);}   /* b3in kahin define nahi tha */
 .bos-tv-bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(40px) brightness(.45);transform:scale(1.15);}
 .bos-tv-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,.7) 100%);}
 .bos-tv-card{
@@ -7231,7 +7255,7 @@ html.bos-motion .row-item:active{transform:scale(.985)}
 })();
 </script>
 <style id="bos-v12-micro">
-@keyframes bosHeartPop{0%{transform:scale(1)}28%{transform:scale(.8)}62%{transform:scale(1.28)}100%{transform:scale(1)}}
+@keyframes bosHeartPopSoft{0%{transform:scale(1)}28%{transform:scale(.8)}62%{transform:scale(1.28)}100%{transform:scale(1)}}   /* duplicate; 7321 active hai */
 @keyframes bosHeartRing{0%{opacity:.55;transform:scale(.4)}100%{opacity:0;transform:scale(1.9)}}
 .bos-heart-pop svg{animation:bosHeartPop .42s cubic-bezier(.34,1.56,.64,1)}
 .bos-heart-pop{position:relative}
@@ -7657,13 +7681,13 @@ body.low-end #lyrics-view.open,html.bos-low-power #lyrics-view.open{}
 .bos-artist-card.selected .bos-artist-check{transform:none;}
 .bos-ob-bg{filter:none!important;}
 .bos-lang,.bos-ob-search{background:rgba(255,255,255,.07);}
-@keyframes bosScreenIn{from{opacity:0;transform:translate3d(24px,0,0)}to{opacity:1;transform:none}}
-@keyframes bosOnboardOut{to{opacity:0;transform:scale(.99)}}
+@keyframes bosScreenInFast{from{opacity:0;transform:translate3d(24px,0,0)}to{opacity:1;transform:none}}   /* rename: 500/487 wali asli definition wapas active */
+@keyframes bosOnboardOutFast{to{opacity:0;transform:scale(.99)}}
 .bos-ob-screen.active{animation-duration:.45s;}
 .bos-artist-card:active{transform:scale(.94);}
 .bos-ob-ripple{will-change:transform,opacity;}
-#bos-fab::after{box-shadow:none!important;border:2px solid var(--accent);animation:bosRing 3.4s ease-out infinite!important;}
-@keyframes bosRing{0%{transform:scale(1);opacity:.55}70%,100%{transform:scale(1.55);opacity:0}}
+#bos-fab::after{box-shadow:none!important;border:2px solid var(--accent);animation:bosRingPing 3.4s ease-out infinite!important;}
+@keyframes bosRingPing{0%{transform:scale(1);opacity:.55}70%,100%{transform:scale(1.55);opacity:0}}   /* rename: 7489 wala box-shadow pulse bach gaya */
 html.bos-low-power #bos-fab::after,body.low-end #bos-fab::after{animation:none!important;opacity:0;}
 :root{--lc-hi:#fff;--lc-hi-a:rgba(255,255,255,.97);--lc-mid:rgba(255,255,255,.8);--lc-lo:rgba(255,255,255,.58);--lc-dim:rgba(255,255,255,.4);}
 [data-theme="light"]{--lc-hi:#0d0d18;--lc-hi-a:rgba(13,13,24,.97);--lc-mid:rgba(13,13,24,.8);--lc-lo:rgba(13,13,24,.52);--lc-dim:rgba(13,13,24,.38);}
@@ -7680,8 +7704,8 @@ html.bos-hidden *,html.bos-hidden *::before,html.bos-hidden *::after{animation-p
 <style id="bos-v22-smooth">
 #view-scroll.nav-enter{animation:bosNavFade .18s ease-out both!important;}
 @keyframes bosNavFade{from{opacity:.0}to{opacity:1}}
-@keyframes bosIn{from{opacity:0}}
-.bos-in{animation:bosIn .22s ease-out backwards!important;}
+@keyframes bosInFast{from{opacity:0}}
+.bos-in{animation:bosInFast .22s ease-out backwards!important;}   /* rename: 7462 ka spring slide wapas active */
 .view{contain:layout style;}
 #view-scroll{transition:none!important;}
 body:has(#full-player.open) #view-scroll,body:has(#queue-panel.open) #view-scroll{transform:none!important;filter:none!important;}
@@ -7716,8 +7740,8 @@ button,.icon-btn,.ctrl-btn,.play-btn,.btn,.bn-item,.nav-item,.stab,.seg-opt{-web
 .btn.bos-press,.icon-btn.bos-press,.ctrl-btn.bos-press,.play-btn.bos-press,.stab.bos-press,.seg-opt.bos-press,.bos-lang.bos-press,.bos-artist-card.bos-press{scale:.93;}
 .card.bos-press,.row-item.bos-press{opacity:.86!important;}
 .card:active,.row-item:active,.btn:active,.icon-btn:active,.ctrl-btn:active,.play-btn:active,.nav-item:active,.bn-item:active{transition-duration:.05s!important;}
-@keyframes bosBounce{0%{scale:.93}55%{scale:1.05}100%{scale:1}}
-.bos-bounce{animation:bosBounce .26s cubic-bezier(.22,1,.36,1)!important;}
+@keyframes bosBounceFast{0%{scale:.93}55%{scale:1.05}100%{scale:1}}
+.bos-bounce{animation:bosBounceFast .26s cubic-bezier(.22,1,.36,1)!important;}   /* rename: 7529 wali curve bach gayi */
 </style>
 
 <style id="bos-landscape-fix">
@@ -7834,7 +7858,7 @@ function injectLib(){
   const body=document.getElementById('library-body');if(!body||document.getElementById('bos-mypl'))return;
   const d=document.createElement('div');d.id='bos-mypl';d.style.marginBottom='22px';
   d.innerHTML='<div class="section-head"><div><div class="section-title">My Playlists</div><div class="section-sub">Created by you</div></div><button class="btn btn-primary" data-bos-pl="new">+ New playlist</button></div>'
-   +(pls.length?'<div class="grid">'+pls.map(p=>'<div class="card" data-bos-pl="open" data-pid="'+esc(p.id)+'"><div class="card-art">'+(p.tracks[0]&&p.tracks[0].image?'<img src="'+esc(p.tracks[0].image)+'" alt="" loading="lazy">':'<div class="bos-pl-ph" style="width:100%;height:100%;border-radius:0;font-size:36px">♪</div>')+'</div><div class="card-title">'+esc(p.name)+'</div><div class="card-sub">'+p.tracks.length+' songs</div></div>').join('')+'</div>'
+   +(pls.length?'<div class="grid">'+pls.map(p=>'<div class="card" data-bos-pl="open" data-pid="'+esc(p.id)+'"><div class="card-art">'+(p.tracks[0]&&p.tracks[0].image?'<img loading="lazy" decoding="async" src="'+esc(p.tracks[0].image)+'" alt="" loading="lazy">':'<div class="bos-pl-ph" style="width:100%;height:100%;border-radius:0;font-size:36px">♪</div>')+'</div><div class="card-title">'+esc(p.name)+'</div><div class="card-sub">'+p.tracks.length+' songs</div></div>').join('')+'</div>'
      :'<div style="color:var(--text-2);font-size:14px">No playlists yet. Create one, then add songs with the + button.</div>');
   body.insertBefore(d,body.firstChild);}
 
@@ -7950,7 +7974,7 @@ async function injectDaily(){
     mixes.forEach(m=>window.BoosterPlaylists&&window.BoosterPlaylists.registerMix(m));
     const d=document.createElement('div');d.className='section';d.id='sec-dailymix';
     d.innerHTML='<div class="section-head"><div><div class="section-title">Daily Mix</div><div class="section-sub">Made from what you play and like</div></div></div><div class="hscroll">'
-      +mixes.map(m=>'<div class="card" data-bos-pl="open" data-pid="'+esc(m.id)+'"><div class="card-art"><img src="'+esc(m.tracks[0].image)+'" alt="" loading="lazy" onerror="this.src=\''+FALLBACK_ART+'\'"></div><div class="card-title">'+esc(m.name)+'</div><div class="card-sub">'+esc(m.sub)+'</div></div>').join('')+'</div>';
+      +mixes.map(m=>'<div class="card" data-bos-pl="open" data-pid="'+esc(m.id)+'"><div class="card-art"><img loading="lazy" decoding="async" src="'+esc(m.tracks[0].image)+'" alt="" loading="lazy" onerror="this.src=\''+FALLBACK_ART+'\'"></div><div class="card-title">'+esc(m.name)+'</div><div class="card-sub">'+esc(m.sub)+'</div></div>').join('')+'</div>';
     const first=home.querySelector('.section');if(first&&first.id==='sec-recently-played-home')first.after(d);else home.insertBefore(d,home.firstChild);
   }catch(e){}finally{mixBusy=false;}
 }
@@ -8271,15 +8295,16 @@ body.low-end .bos-gap-dots{animation:none !important;}
 <style id="bos-v24-turbo">
 .glass-1,.row-item .glass-1,.heart-btn{}
 #lyrics-view .lyric-line.karaoke-on .lyric-word{will-change:auto!important;}
-@keyframes bosItem{from{opacity:0;transform:translateY(14px) scale(.9)}}
-@keyframes bosItemOut{to{opacity:0;transform:translateY(10px) scale(.94)}}
-@keyframes bosVtOut{to{opacity:0;transform:translateX(-5%) scale(.97)}}
-@keyframes bosVtIn{from{opacity:0;transform:translateX(7%) scale(.97)}}
-@keyframes bosDrop{from{opacity:0;translate:0 -46px;scale:1.28;rotate:-8deg}}
-@keyframes bosSym{from{opacity:0;scale:.3;rotate:-60deg}}
-@keyframes bosSkipN{from{opacity:0;translate:46px 0}}
-@keyframes bosSkipP{from{opacity:0;translate:-46px 0}}
-@keyframes bosIsland{0%{opacity:0;transform:translateY(-16px) scale(.55,.45)}100%{opacity:1;transform:none}}
+/* rename (Lite suffix): in same-naam definitions se 7462-7534 wale blur/spring versions dead ho gaye the */
+@keyframes bosItemLite{from{opacity:0;transform:translateY(14px) scale(.9)}}
+@keyframes bosItemOutLite{to{opacity:0;transform:translateY(10px) scale(.94)}}
+@keyframes bosVtOutLite{to{opacity:0;transform:translateX(-5%) scale(.97)}}
+@keyframes bosVtInLite{from{opacity:0;transform:translateX(7%) scale(.97)}}
+@keyframes bosDropLite{from{opacity:0;translate:0 -46px;scale:1.28;rotate:-8deg}}
+@keyframes bosSymLite{from{opacity:0;scale:.3;rotate:-60deg}}
+@keyframes bosSkipNLite{from{opacity:0;translate:46px 0}}
+@keyframes bosSkipPLite{from{opacity:0;translate:-46px 0}}
+@keyframes bosIslandLite{0%{opacity:0;transform:translateY(-16px) scale(.55,.45)}100%{opacity:1;transform:none}}
 .bos-v9-fx-panel{filter:none!important;transition:opacity .28s var(--ease-smooth),transform .45s var(--sp,var(--ease-spring)),visibility 0s .45s!important;}
 .eq-bars span{height:14px;animation-name:bosEqT!important;}
 @keyframes bosEqT{0%,100%{transform:scaleY(.29)}25%{transform:scaleY(1)}50%{transform:scaleY(.5)}75%{transform:scaleY(.86)}}
@@ -8459,12 +8484,10 @@ window.__bosLyricFix={fixLine:fixLine,demoji:demoji};
   // ==== SMART SERVER POOL: health-ranked, self-healing, auto-fallback ====
   // Servers are ranked by measured speed. A server that fails goes on a short "cooldown"
   // and the next fastest one is used instantly. Rankings are remembered between visits.
+  /* Tested Nov 2026: nerdvpn = DNS dead, nadeko = 502, f5.si = 530 — hata diye */
   var BASE_SERVERS = [
-    'https://invidious.tiekoetter.com',
-    'https://invidious.nerdvpn.de',
     'https://yt.chocolatemoo53.com',
-    'https://inv.nadeko.net',
-    'https://invidious.f5.si',
+    'https://invidious.tiekoetter.com',
     'https://inv.miningtcup.me'
   ];
   // ==== YouTube Music (InnerTube) source, SimpMusic-style: deploy ytm-stream-worker.js and paste its URL here ====
@@ -8473,19 +8496,10 @@ window.__bosLyricFix={fixLine:fixLine,demoji:demoji};
   try { YTM_ENDPOINT = (localStorage.getItem('bos_ytm_endpoint') || YTM_ENDPOINT).replace(/\/$/, ''); } catch (e) {}
   function srcUrl(h, id){ return h === 'ytm' ? YTM_ENDPOINT + '/ytm/stream?id=' + encodeURIComponent(id) : h + '/latest_version?id=' + encodeURIComponent(id) + '&itag=140&local=true'; }
   // ==== Piped (no server needed): public API that returns ready-to-play audio URLs ====
-  var PIPED = ['https://pipedapi.kavin.rocks', 'https://pipedapi.adminforge.de', 'https://api.piped.private.coffee', 'https://pipedapi.leptons.xyz'];
+  /* Tested Nov 2026: kavin.rocks 526, adminforge 403 (galat domain), leptons 502 — sirf private.coffee zinda hai */
+  var PIPED = ['https://api.piped.private.coffee'];
   var ppCache = {};
-  (function(){
-    var c = lsGet('bos_pp_hosts_v1'); if (c && c.hosts && c.hosts.length) PIPED = c.hosts.concat(PIPED.filter(function(h){ return c.hosts.indexOf(h) < 0; })).slice(0, 10);
-    if (c && Date.now() - c.t < 6 * 3600 * 1000) return;
-    var ac = new AbortController(), tm = setTimeout(function(){ ac.abort(); }, 6000);
-    fetch('https://piped-instances.kavin.rocks/', { signal: ac.signal }).then(function(r){ return r.json(); }).then(function(l){
-      var u = (l || []).map(function(x){ return x && x.api_url; }).filter(function(x){ return /^https:\/\/[a-z0-9.-]+$/i.test(x || ''); }).slice(0, 8);
-      if (!u.length) return;
-      lsSet('bos_pp_hosts_v1', { t: Date.now(), hosts: u });
-      PIPED = u.concat(PIPED.filter(function(h){ return u.indexOf(h) < 0; })).slice(0, 10);
-    }).catch(function(){}).finally(function(){ clearTimeout(tm); });
-  })();
+  /* piped-instances.kavin.rocks ka domain dead hai aur har load pe 6s khaata tha — discovery block hata diya */
   var ppPending = {};
   function ppResolve(id){
     var hit = ppCache[id]; if (hit && Date.now() - hit.t < 1500000) return Promise.resolve(hit.u);
@@ -9061,7 +9075,7 @@ window.__bosLyricFix={fixLine:fixLine,demoji:demoji};
       Y.fr.style.left = Math.round(r.left + r.width/2 - 3) + 'px';
       Y.fr.style.top = Math.round(r.top + r.height/2 - 3) + 'px';
     }
-    setInterval(function(){ if(!document.hidden) place(); }, 300); window.addEventListener('resize', place);
+    setInterval(function(){ if(!document.hidden) place(); }, 600); window.addEventListener('resize', place);
 
     Y.load = function(host, id, start){
       setLoading(false); Y.host = host; Y.id = id; Y.base = start || 0; Y.t0 = Date.now(); Y.playing = true; Y.mode = 'iframe';
@@ -9161,7 +9175,8 @@ window.__bosLyricFix={fixLine:fixLine,demoji:demoji};
         if (Y.on && el2 && el2.tagName === 'AUDIO' && el2 !== Y.au) Y.off();
       }, true);
     });
-    setInterval(stopIfOtherSong, 150);
+    /* 150ms pehle hamesha chalta tha; upar ke play/playing listeners already ye kaam karte hain */
+    setInterval(function(){ if(!document.hidden) stopIfOtherSong(); }, 600);
     /* the local players' own 'pause/emptied' events clear the ring: put it back while a YouTube song is still loading */
     ['pause', 'emptied', 'canplay'].forEach(function(ev){
       document.addEventListener(ev, function(e){
@@ -9698,7 +9713,7 @@ Q.playNext=function(t){t=Object.assign({},t);delete t._auto;insertUser(t,true);t
 /* panel */
 function row(t,i,on,tag){
   var d=disp(t);
-  return '<div class="row-item'+(on?" playing":"")+'" data-action="play-queue-index" data-index="'+i+'"><div class="row-art"><img src="'+esc(t.image)+'" loading="lazy" alt=""></div><div class="row-meta"><div class="row-title">'+esc(d.n)+'</div><div class="row-sub">'+esc(d.a)+'</div>'+(tag?'<span class="q-tag">'+esc(tag)+'</span>':'')+'</div>'
+  return '<div class="row-item'+(on?" playing":"")+'" data-action="play-queue-index" data-index="'+i+'"><div class="row-art"><img loading="lazy" decoding="async" src="'+esc(t.image)+'" loading="lazy" alt=""></div><div class="row-meta"><div class="row-title">'+esc(d.n)+'</div><div class="row-sub">'+esc(d.a)+'</div>'+(tag?'<span class="q-tag">'+esc(tag)+'</span>':'')+'</div>'
    +(on?'<div class="eq-bars"><span></span><span></span><span></span></div>':'<button class="ctrl-btn" data-action="remove-queue-index" data-index="'+i+'" aria-label="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>')+'</div>';
 }
 function render(){
@@ -9755,7 +9770,7 @@ html body .nav-item.active::before{display:none}
 html body #topbar{padding:22px 32px 10px;background:linear-gradient(var(--bg-0),transparent)}
 html body .topbar-title{font-size:26px;font-weight:700;letter-spacing:-.035em}
 html body .section-title{font-size:22px;font-weight:700;letter-spacing:-.03em;background:linear-gradient(180deg,var(--text-1) 40%,var(--text-2));-webkit-background-clip:text;background-clip:text;color:transparent}
-html body .link-more{padding:5px 12px;border-radius:99px;border:1px solid var(--hair);background:var(--glass-1-bg);font-size:12px;font-weight:600;color:var(--text-2);transition:all .25s var(--ease-out)}
+html body .link-more{padding:5px 12px;border-radius:99px;border:1px solid var(--hair);background:var(--glass-1-bg);font-size:12px;font-weight:600;color:var(--text-2);transition:background-color .25s var(--ease-out),color .25s var(--ease-out),border-color .25s var(--ease-out),box-shadow .25s var(--ease-out),transform .25s var(--ease-out),opacity .25s var(--ease-out)}
 html body .link-more:hover{color:var(--text-1);border-color:var(--hair-2);background:var(--glass-2-bg)}
 html body .card{width:168px;transition:transform .45s var(--ease-spring)}
 html body .card:hover{transform:translateY(-6px)}
@@ -9774,7 +9789,7 @@ html body .row-title{font-size:13.5px;font-weight:600}
 html body .row-sub,html body .row-dur{font-size:12px;color:var(--text-3)}
 html body .search-bar{padding:14px 20px;border-radius:16px;background:var(--glass-2-bg);border:1px solid var(--hair);box-shadow:var(--lift);transition:border-color .25s,box-shadow .25s}
 html body .search-bar:focus-within{border-color:rgba(var(--accent-r),var(--accent-g),var(--accent-b),.6);box-shadow:0 0 0 4px rgba(var(--accent-r),var(--accent-g),var(--accent-b),.16),var(--lift)}
-html body .stab,html body .chip,html body .seg-opt{border:1px solid var(--hair);border-radius:99px;font-weight:600;transition:all .3s var(--ease-spring)}
+html body .stab,html body .chip,html body .seg-opt{border:1px solid var(--hair);border-radius:99px;font-weight:600;transition:background-color .3s var(--ease-spring),color .3s var(--ease-spring),border-color .3s var(--ease-spring),box-shadow .3s var(--ease-spring),transform .3s var(--ease-spring),opacity .3s var(--ease-spring)}
 html body .stab:active,html body .chip:active,html body .btn:active,html body .icon-btn:active{transform:scale(.94)}
 html body .stab.active,html body .seg-opt.active{background:var(--text-1);color:var(--bg-0);border-color:transparent;box-shadow:0 6px 18px -6px rgba(255,255,255,.35)}
 html body .btn{border-radius:12px;font-weight:650;transition:transform .35s var(--ease-spring),box-shadow .25s,filter .2s}
