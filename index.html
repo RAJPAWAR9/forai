@@ -2,39 +2,32 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<script id="bos-no-anim-js">
-/* Animations removed everywhere EXCEPT inside #full-player (which also contains #lyrics-view).
-   Web Animations API calls outside those two are collapsed to ~0ms; the Animation objects,
-   onfinish/oncancel callbacks and fill modes still work, so app logic is unaffected. */
-(function(){
-  var orig = Element.prototype.animate;
-  if (!orig || orig.__bosNoAnim) return;
-  function keep(el){ try { return !!el.closest('#full-player,#lyrics-view'); } catch(e){ return true; } }
-  var patched = function(kf, opts){
-    if (keep(this)) return orig.call(this, kf, opts);
-    var o = (typeof opts === 'number') ? {duration: opts} : Object.assign({}, opts || {});
-    o.duration = 1; o.delay = 0; o.endDelay = 0; o.iterations = 1;
-    return orig.call(this, kf, o);
-  };
-  patched.__bosNoAnim = true;
-  Element.prototype.animate = patched;
-})();
-</script>
 
 <script>
 /* ==== BOOSTER SERVER: paste your Cloudflare Worker URL between the quotes (or run localStorage.setItem('bos_server','https://...') once) ==== */
 window.BOOSTER_SERVER=(function(){var s='';try{s=localStorage.getItem('bos_server')||''}catch(e){}return(s||'https://boostersever.raj-pawar091206.workers.dev').replace(/\/$/,'')})();
+window.__boosterDown=function(){return false;}; window.__boosterMarkDown=function(){};
 (function(){
   var S=window.BOOSTER_SERVER; if(!/^https:\/\//.test(S)){ window.BOOSTER_SERVER=''; return; }
+  /* B1: after one failure skip Booster for 150s and go straight to fallbacks */
+  var __bd=0; window.__boosterDown=function(){return Date.now()<__bd;}; window.__boosterMarkDown=function(){__bd=Date.now()+150000;};
   var of=window.fetch.bind(window); window.__origFetch=of; (function(){var d='',l='';try{d=localStorage.getItem('bos_dl_server')||'';l=localStorage.getItem('bos_ly_server')||'';}catch(e){} window.BOOSTER_DL_SERVER=(d||window.BOOSTER_SERVER||'').replace(/\/$/,''); window.BOOSTER_LY_SERVER=(l||window.BOOSTER_SERVER||'').replace(/\/$/,'');})();
   /* every cross-site https request goes through YOUR server (except *.workers.dev = your own workers); if the server refuses a host or is unreachable, the request is sent directly */
   window.fetch=function(i,o){
     var u=null; try{ if(typeof i==='string'||i instanceof URL) u=new URL(String(i),location.href); }catch(e){}
     if(u&&u.protocol==='https:'&&u.origin!==location.origin&&!/\.workers\.dev$/.test(u.hostname)){
-      return of(S+'/p?u='+encodeURIComponent(u.href),o).then(function(r){ return (r.status===403&&r.headers.get('X-Booster-Deny'))?of(i,o):r; },function(e){ if(o&&o.signal&&o.signal.aborted) throw e; return of(i,o); });
+      if(window.__boosterDown()) return of(i,o);
+      if(/^(itunes\.apple\.com|lrclib\.net)$/.test(u.hostname)){   /* B5: these allow CORS - no need to spend Worker quota unless direct fails */
+        return of(i,o).catch(function(e){ if(o&&o.signal&&o.signal.aborted) throw e; return viaProxy(i,o,u); });
+      }
+      return viaProxy(i,o,u);
     }
     return of(i,o);
   };
+  function viaProxy(i,o,u){
+      return new Promise(function(res,rej){ var done=false, tm=setTimeout(function(){ if(done) return; done=true; window.__boosterMarkDown(); of(i,o).then(res,rej); },5000);
+        of(S+'/p?u='+encodeURIComponent(u.href),o).then(function(r){ if(done) return; done=true; clearTimeout(tm); if(r.status===403&&r.headers.get('X-Booster-Deny')) return of(i,o).then(res,rej); res(r); },function(e){ if(done) return; done=true; clearTimeout(tm); if(o&&o.signal&&o.signal.aborted) return rej(e); window.__boosterMarkDown(); of(i,o).then(res,rej); }); });
+  }
 })();
 </script>
 
@@ -100,8 +93,6 @@ body{
   overflow:hidden; -webkit-font-smoothing:antialiased; position:relative;
   letter-spacing:-.01em; overscroll-behavior:none; touch-action:pan-y;
 }
-body.no-anim *:not(#bottom-nav .bn-pill):not(#mini-player):not(#lyrics-view):not(#lyrics-view *):not(.ly-thumb):not(.ly-meta):not(.ly-btn):not(.bos-gap):not(.bos-gap *):not(#full-player.ly-on .fp-meta):not(#full-player.ly-on .fp-head):not(#full-player.ly-on .bos-credit-fp):not(#full-player.ly-on .fp-progress-wrap):not(#full-player.ly-on .fp-controls):not(#full-player.ly-on .fp-side-actions),body.no-anim *::before:not(#lyrics-view):not(#lyrics-view *):not(.ly-thumb):not(.ly-meta):not(.ly-btn):not(.bos-gap):not(.bos-gap *):not(#full-player.ly-on .fp-meta):not(#full-player.ly-on .fp-head):not(#full-player.ly-on .bos-credit-fp):not(#full-player.ly-on .fp-progress-wrap):not(#full-player.ly-on .fp-controls):not(#full-player.ly-on .fp-side-actions),body.no-anim *::after:not(#lyrics-view):not(#lyrics-view *):not(.ly-thumb):not(.ly-meta):not(.ly-btn):not(.bos-gap):not(.bos-gap *):not(#full-player.ly-on .fp-meta):not(#full-player.ly-on .fp-head):not(#full-player.ly-on .bos-credit-fp):not(#full-player.ly-on .fp-progress-wrap):not(#full-player.ly-on .fp-controls):not(#full-player.ly-on .fp-side-actions){transition:none !important; animation:none !important;}
-body.no-anim #full-player .fp-art-wrap{animation:none !important;transition:none !important;}
 
 img{display:block;max-width:100%;}
 button{font-family:inherit;border:none;background:none;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -592,9 +583,6 @@ button,.ctrl-btn,.icon-btn,.play-btn,.bn-item,.nav-item{touch-action:manipulatio
   #topbar{position:sticky;top:0;z-index:30;}
   #queue-panel{max-height:82dvh;}
 }
-html.bos-low-power *,html.bos-low-power *::before,html.bos-low-power *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.12s!important;scroll-behavior:auto!important;}
-html.bos-low-power .glass,html.bos-low-power .glass-2,html.bos-low-power .glass-3{}
-html.bos-low-power .orb,html.bos-low-power .glow,html.bos-low-power canvas{display:none!important;}
 </style>
 
 <style id="bos-v9-voicecut-bass-css">
@@ -638,8 +626,9 @@ body{overscroll-behavior-y:none;}
 body.no-player-bg #fp-bg{display:none;}
 body.no-lyric-anim .lyric-line,body.no-lyric-anim .lyric-fill,body.no-lyric-anim .lyric-word{transition:none !important;animation:none !important;}
 </style>
+<style>/* C3: stop native text/image drag stealing mouse drags on the mini player */#mini-player,#mini-player *,#full-player .fp-art-wrap,#full-player .fp-art-wrap img{-webkit-user-select:none;user-select:none;-webkit-user-drag:none}</style>
 </head>
-<body data-theme="dark" class="no-anim">
+<body data-theme="dark">
 
 <div id="ambient">
   <div class="amb-layer" id="amb-a"></div>
@@ -1020,7 +1009,6 @@ const ThemeManager = {
 };
 function applySettingsEffects(){
   const cl=document.body.classList;
-  cl.add("no-anim");
   cl.toggle("no-player-bg", !State.settings.dynamicPlayerBg);
   cl.toggle("no-lyric-anim", !State.settings.lyricsAnimation);
   cl.toggle("playing-anim", !!(State.isPlaying && State.settings.animatedArtwork));
@@ -1876,7 +1864,7 @@ function lyScore(h,info){
   const ts=Math.max(0,...info.titles.map(t=>lyricsSimilarity(t,tn)));
   const as=an&&info.artists.length?Math.max(...info.artists.map(a=>lyricsSimilarity(a,an))):.4;
   let s=ts*.62+as*.28; const hd=Number(h.duration)||0, df=hd&&info.dur?Math.abs(hd-info.dur):99;
-  if(hd&&info.dur) s+= df<=2?.1:df<=5?.05:(info.track&&info.track.source==="youtube"?(df<=25?0:-.08):(df<=9?-.04:-.3));   /* YouTube videos are often longer than the studio song */
+  if(hd&&info.dur) s+= df<=2?.1:df<=5?.05:(info.track&&info.track.source==="youtube"?(df<=12?0:df<=25?-.12:-.3):(df<=5?0:df<=9?-.12:-.35));   /* YouTube videos are often longer than the studio song */
   return {s,ts,as,df};
 }
 function lyPlainLines(text){
@@ -1892,6 +1880,10 @@ function lyPlainLines(text){
 }
 function lyBuild(h,info,source,sc){
   if(!h||h.instrumental) return null;
+  { const hd=Number(h.duration)||0, yt0=!!(info.track&&info.track.source==="youtube");
+    if(hd&&info.dur&&Math.abs(hd-info.dur)>(yt0?40:15)) return null;   /* different version / different song */
+    if(info.dur&&h.syncedLyrics){ const _l=parseLRC(h.syncedLyrics); const lt=_l.length?_l[_l.length-1].time:0; if(lt&&(lt>info.dur+12||lt<info.dur*.4)) return null; }
+  }
   if(h.syncedLyrics){
     const lines=parseLRC(h.syncedLyrics);
     if(lines.length>=2){ const ws=lines.some(l=>l.real); return {synced:true,estimated:false,wordSynced:ws,source,lines,s:sc,rank:sc+.5+(ws?.1:0)}; }
@@ -1991,14 +1983,15 @@ async function lyLRCGet(info,sig){
 }
 /* 0) BOOSTER server lyrics (/lyrics): one request, the server asks LRCLIB for you */
 async function lyBooster(info,sig){
-  const S=window.BOOSTER_LY_SERVER; if(!S) return [];
+  const S=window.BOOSTER_LY_SERVER; if(!S||window.__boosterDown()) return [];
   const t=info.titles[0], a=info.artists[0]||""; if(!t) return [];
   const u=S+"/lyrics?title="+encodeURIComponent(t)+"&artist="+encodeURIComponent(a)+(info.album?"&album="+encodeURIComponent(info.album):"")+(info.dur?"&dur="+info.dur:"");
-  const arr=await lyJSON(u,sig,8000);
+  const arr=await lyJSON(u,sig,3500);
+  if(!Array.isArray(arr)) window.__boosterMarkDown();
   const out=[], yt=!!(info.track&&info.track.source==="youtube");
   if(Array.isArray(arr)) for(const h of arr.slice(0,25)){
     const sc=lyScore(h,info);
-    if(sc.ts>=.6&&(sc.s>=.7||(sc.ts>=.88&&(sc.df<=10||yt)))){ const c=lyBuild(h,info,"BOOSTER",sc.s); if(c) out.push(c); }
+    if(sc.ts>=.6&&(sc.s>=.8||(sc.ts>=.88&&(sc.df<=10||yt)))){ const c=lyBuild(h,info,"BOOSTER",sc.s); if(c) out.push(c); }
   }
   return out;
 }
@@ -2164,7 +2157,7 @@ async function fetchLyricsExpanded(track,signal){
     list.forEach(p=>{
       Promise.resolve().then(()=>p(info,signal)).then(r=>{
         (Array.isArray(r)?r:[r]).forEach(consider);
-        if(best&&best.synced&&!best.estimated&&best.s>=.78){ if(best.wordSynced) end(); else if(!timer) timer=setTimeout(end,1100); }
+        if(best&&best.synced&&!best.estimated&&best.s>=.78){ if(best.wordSynced) end(); else if(!timer) timer=setTimeout(end,1000); }
       }).catch(e=>{ if(e&&e.name==="AbortError"&&!fin){ fin=true; clearTimeout(timer); clearTimeout(cap); reject(e); } })
         .finally(()=>{ if(--left<=0) end(); });
     });
@@ -2172,7 +2165,7 @@ async function fetchLyricsExpanded(track,signal){
   /* PRIORITY: LRCLIB (2.5) first, then Worker (3), then the rest; the Worker request starts in parallel so it is ready if LRCLIB has nothing */
   let wp=null;
   if(YT_CC_ENDPOINT){ wp=Promise.race([lyWorkerLyrics(info,signal),new Promise(r=>setTimeout(()=>r(null),8000))]); wp.catch(()=>{}); }
-  await runGroup([lyBooster,lyLRCCached,lyLRCGet,lyLRCSearch],6000);
+  await runGroup([lyBooster,lyLRCCached,lyLRCGet,lyLRCSearch],4500);
   if((!best||!best.synced||best.estimated)&&wp){
     let wr=null; try{ wr=await wp; }catch(e){ if(e&&e.name==="AbortError") throw e; }
     if(wr) best=wr;
@@ -2794,7 +2787,11 @@ window.addEventListener("popstate",e=>{
   const s=e.state;if(!s||!s.boosterOS)return;
   if(s.view==="lyrics"){openFullPlayer({fromHistory:true});openLyrics({fromHistory:true});return;}
   if(s.view==="player"){closeLyrics({fromHistory:true});openFullPlayer({fromHistory:true});return;}
-  closeLyrics({fromHistory:true});closeFullPlayer({fromHistory:true});navigate(s.view,s.params||{},{fromBack:true,restoreScroll:s.scrollTop||0});
+  var __fpWasOpen=$("#full-player").classList.contains("open");
+  closeLyrics({fromHistory:true});closeFullPlayer({fromHistory:true});
+  /* closing the player: the page underneath is already on screen, re-rendering it blocked the main thread (animation stall) and made cards blink */
+  if(__fpWasOpen&&State.view===s.view&&JSON.stringify(State.viewParams||{})===JSON.stringify(s.params||{}))return;
+  navigate(s.view,s.params||{},{fromBack:true,restoreScroll:s.scrollTop||0});
 });
 
 /* ============================================================ RENDER: HOME ============================================================ */
@@ -5528,14 +5525,14 @@ async function download(c){
   if(await jioTry(true)) return;
   /* 1) BOOSTER server (/dl): the server fetches the audio and hands it to us */
   var DS=window.BOOSTER_DL_SERVER;
-  if(DS&&t.videoId){
+  if(DS&&t.videoId&&!window.__boosterDown()){
     try{
       tst('Downloading from BOOSTER server…');
-      var ac1=new AbortController(), tm1=setTimeout(function(){ try{ac1.abort();}catch(e){} },30000);
+      var ac1=new AbortController(), tm1=setTimeout(function(){ try{ac1.abort();}catch(e){} },8000);
       var r1=await fetch(DS+'/dl?id='+encodeURIComponent(t.videoId)+'&name='+encodeURIComponent(name),{signal:ac1.signal});
       clearTimeout(tm1);
       if(r1.ok){ var b1=await r1.blob(); if(b1.size>=30000&&!/text|json|html/i.test(b1.type)){ save(b1,''); return; } }
-    }catch(e){}
+    }catch(e){ window.__boosterMarkDown(); }
   }
   /* 2) fallback: YouTube: RACE all sources in parallel. The source that won last time starts first; the rest follow 0.5s apart. First good file wins, the rest are cancelled. */
   var winKey=''; try{ winKey=localStorage.getItem('bos_dl_win')||''; }catch(e){}
@@ -5718,9 +5715,6 @@ window.BosSongMenu={open:function(track){ if(track) openMenu({kind:track.source=
   const isNative=!!(window.Capacitor && (window.Capacitor.isNativePlatform?.() || window.Capacitor.getPlatform?.() !== 'web'));
   document.documentElement.classList.toggle('bos-native-app',isNative);
 
-  /* Auto low-power heuristic for low-memory Android devices. User can override by removing class. */
-  const mem=navigator.deviceMemory||0, cores=navigator.hardwareConcurrency||0;
-  if((mem&&mem<=4)||(cores&&cores<=4)) document.documentElement.classList.add('bos-low-power');
 
   /* Android hardware back support. Capacitor App plugin is optional, so browser never crashes. */
   function appBack(){
@@ -6720,8 +6714,6 @@ html.bos-motion #mini-player.show{opacity:var(--mini-o,1);}
   html.bos-motion #bottom-nav .bn-item.bn-hot svg{transform:translateY(-2px) scale(1.12);}
 }
 @media (max-width:980px){
-  html.bos-low-power.bos-motion #bottom-nav::before,
-  html.bos-low-power.bos-motion #bottom-nav::after{}
 }
 @media (prefers-reduced-motion:reduce){
   html.bos-motion #bottom-nav .bn-pill{transition:none;}
@@ -6758,7 +6750,7 @@ html.bos-motion #mini-player.show{opacity:var(--mini-o,1);}
     const clamp=(v,a,b)=>v<a?a:v>b?b:v;
     const lerp=(a,b,t)=>a+(b-a)*t;
     const ss=(a,b,x)=>{x=clamp((x-a)/(b-a),0,1);return x*x*(3-2*x);};
-    const instant=()=>mqReduce.matches;   /* dock + sheet animate even though body.no-anim kills CSS transitions elsewhere */
+    const instant=()=>mqReduce.matches;
     const noMorph=()=>mqReduce.matches;   /* Apple Music-style mini<->full morph is ON (only prefers-reduced-motion makes it instant) */
 
     /* ------------------------------------------------------------------ springs */
@@ -6806,14 +6798,18 @@ html.bos-motion #mini-player.show{opacity:var(--mini-o,1);}
       const pt=art.style.translate, ps=art.style.scale;
       art.style.translate='none'; art.style.scale='none';
       const fa=art.getBoundingClientRect();
-      art.style.translate=pt; art.style.scale=ps;
+      /* resting look of the artwork once the morph is finished (e.g. paused artwork rests at scale .88): the morph must end exactly there,
+         otherwise the art visibly shrinks after opening / jumps bigger when closing starts */
+      const ptr=art.style.transition; art.style.transition='none'; art.style.scale=''; art.style.translate='';
+      const acs=getComputedStyle(art); let rs=parseFloat(acs.scale); if(!(rs>0)) rs=1; const rr=parseFloat(acs.borderTopLeftRadius)||26;
+      art.style.transition=ptr; art.style.translate=pt; art.style.scale=ps;
       const cs=getComputedStyle(mini), as=getComputedStyle(miniArt);
       M={W,H,
         mini:{x:m.left,y:m.top,w:m.width,h:m.height},
         ma:{x:ma.left,y:ma.top,w:ma.width,h:ma.height},
         fa:{x:fa.left,y:fa.top,w:fa.width||1,h:fa.height||1},
         rad:parseFloat(cs.borderTopLeftRadius)||24,
-        mar:parseFloat(as.borderTopLeftRadius)||14};
+        mar:parseFloat(as.borderTopLeftRadius)||14, rs:rs, rr:rr};
     }
 
     /* ------------------------------------------------------------------ sheet rendering */
@@ -6840,12 +6836,12 @@ html.bos-motion #mini-player.show{opacity:var(--mini-o,1);}
       /* the mini art stays fully opaque underneath while the sheet art fades over it - two half-transparent layers crossfading dip to ~75% (visible blink) */
       miniArt.style.opacity=IND?(1-ss(.09,.1,p)):(1-ss(0,.1,p));
       if(IND){
-        const s=lerp(M.ma.w/M.fa.w,1,p);
+        const s=lerp(M.ma.w/M.fa.w,M.rs,p);
         const cx=lerp(M.ma.x+M.ma.w/2,M.fa.x+M.fa.w/2,p)-(M.fa.x+M.fa.w/2);
         const cy=lerp(M.ma.y+M.ma.h/2,M.fa.y+M.fa.h/2,p)-(M.fa.y+M.fa.h/2);
         art.style.translate=cx+'px '+cy+'px';
         art.style.scale=s;
-        art.style.borderRadius=(lerp(M.mar,26,p)/s)+'px';
+        art.style.borderRadius=(lerp(M.mar,M.rr*M.rs,p)/s)+'px';
         art.style.opacity=ss(0,.1,p);
       }
     }
@@ -6904,34 +6900,18 @@ html.bos-motion #mini-player.show{opacity:var(--mini-o,1);}
       add(miniArt,p=>({opacity:IND?(1-ss(.09,.1,p)):(1-ss(0,.1,p))}));
       if(IND) add(art,p=>{
         p=clamp(p,0,1);   /* reference artwork settles without overshoot */
-        const sc=lerp(M.ma.w/M.fa.w,1,p);
+        const sc=lerp(M.ma.w/M.fa.w,M.rs,p);
         const cx=lerp(M.ma.x+M.ma.w/2,M.fa.x+M.fa.w/2,p)-(M.fa.x+M.fa.w/2);
         const cy=lerp(M.ma.y+M.ma.h/2,M.fa.y+M.fa.h/2,p)-(M.fa.y+M.fa.h/2);
-        return {translate:cx+'px '+cy+'px',scale:sc,borderRadius:(lerp(M.mar,26,clamp(p,0,1))/sc)+'px',opacity:ss(0,.1,p)};
+        return {translate:cx+'px '+cy+'px',scale:sc,borderRadius:(lerp(M.mar,M.rr*M.rs,clamp(p,0,1))/sc)+'px',opacity:ss(0,.1,p)};
       });
       const run={anims:A,tr}; waRun=run;
       A[0].onfinish=()=>{ if(waRun!==run) return; waRun=null; finalize(); A.forEach(a=>{ try{a.cancel();}catch(_){} }); };
-    }
-    /* ---- Lite path (4 GB / low-end devices): compositor-only slide, no clip-path morph, no forced layout ---- */
-    const isLite=()=>{try{return localStorage.getItem('boosterLiteMode')==='on';}catch(_){return false;}};   /* heuristics removed: every device gets the same morph as the video (add class bos-lite to <html> for the slide-only path) */
-    let liteAnim=null;
-    function liteMove(o){
-      if(liteAnim){ try{liteAnim.cancel();}catch(_){} liteAnim=null; }
-      P.x=P.t=o?1:0; P.v=0; sheetBusy=false;
-      root.classList.add('bos-lt');
-      fp.classList.add('bos-vis','bos-busy'); busyOn();
-      fp.style.clipPath='none';
-      if(!o){ mini.style.opacity=''; miniArt.style.opacity=''; }   /* closing: mini is already there when the sheet slides off it (no late pop-in) */
-      const A='translate3d(0,0,0)', B='translate3d(0,100%,0)';
-      const a=fp.animate([{transform:o?B:A},{transform:o?A:B}],{duration:o?300:230,easing:o?'cubic-bezier(.22,1,.36,1)':'cubic-bezier(.4,0,.9,.6)',fill:'both'});
-      liteAnim=a;
-      a.onfinish=()=>{ if(liteAnim!==a) return; liteAnim=null; finalize(); try{a.cancel();}catch(_){} root.classList.remove('bos-lt'); };
     }
     function setOpen(o){
       if(dragging) abortDrag();
       if(waRun) stopWA();
       wantOpen=o;
-      if(!noMorph()&&isLite()&&fp.animate){ liteMove(o); return; }
       if(!sheetBusy&&((o&&P.x<=.001)||(!o&&P.x>=.999))) measure();
       if(o) fp.classList.add('bos-vis');
       sheetBusy=true; busyOn();
@@ -7193,7 +7173,6 @@ html.bos-motion #mini-player.show{opacity:var(--mini-o,1);}
 @property --amb2-b{syntax:'<number>';inherits:true;initial-value:200}
 :root{--amb2-r:90;--amb2-g:70;--amb2-b:200;
   transition:--accent-r 1.1s var(--ease-smooth),--accent-g 1.1s var(--ease-smooth),--accent-b 1.1s var(--ease-smooth),--amb2-r 1.1s var(--ease-smooth),--amb2-g 1.1s var(--ease-smooth),--amb2-b 1.1s var(--ease-smooth);}
-html.bos-low-power{transition:none !important;}
 #ambient .amb-layer.on{opacity:1;}
 #ambient .amb-layer.tiny{filter:blur(28px) saturate(1.3) brightness(.75);}
 [data-theme="light"] #ambient .amb-layer.tiny{filter:blur(28px) saturate(1.15) brightness(1.15);}
@@ -7213,21 +7192,17 @@ html.bos-motion #mini-player .mini-art{opacity:var(--mini-ao,1);}
 @media (max-width:980px){html.bos-motion #mini-player{transition:transform .5s var(--ease-spring),translate .4s var(--ease-spring);}}
 html.bos-motion #full-player{background:transparent;}
 html.bos-motion #full-player::before{content:"";position:absolute;inset:0;background:var(--glass-modal-bg);opacity:var(--k2,1);pointer-events:none;}
-html.bos-low-power.bos-motion #mini-player{background-image:none;}
 @media (prefers-reduced-motion:reduce){:root{transition:none;}#ambient .amb-tint{animation:none !important;}}
 </style>
 <style id="bos-video-motion">
 html.bos-motion #mini-player{z-index:42;}
 html.bos-motion #bottom-nav .bn-pill{transition-timing-function:cubic-bezier(.34,1.45,.5,1)!important;}
 /* === motion from the reference video, tuned for 4 GB phones === */
-/* tab-capsule slide + mini-player dock keep a short transform-only transition even in low-power / lite */
+/* tab-capsule slide + mini-player dock transitions */
 html.bos-motion #bottom-nav .bn-pill{transition:transform .34s cubic-bezier(.22,1,.36,1),scale .22s ease-out,opacity .16s linear!important;}
 html.bos-motion #bottom-nav .bn-pill.is-drag{transition:scale .22s ease-out,opacity .16s linear!important;}
 html.bos-motion #mini-player{transition:transform .32s cubic-bezier(.22,1,.36,1),translate .28s cubic-bezier(.22,1,.36,1)!important;}
 html.bos-motion #mini-player.bos-mv{transition:translate .28s cubic-bezier(.22,1,.36,1)!important;}
-/* lite mode used to strip will-change from everything, which un-promotes the layers the morph needs */
-html.bos-lite #full-player.bos-busy,html.bos-low-power #full-player.bos-busy{will-change:transform,clip-path!important;}
-html.bos-lite #mini-player,html.bos-lite #bottom-nav,html.bos-low-power #mini-player,html.bos-low-power #bottom-nav{will-change:transform!important;}
 /* only the few things that move are promoted; nothing else gets a layer */
 html.bos-motion #full-player:not(.bos-busy){will-change:auto;}
 </style>
@@ -7274,7 +7249,7 @@ html.bos-motion .row-item:active{transform:scale(.985)}
 <script id="bos-v13-motion-script">
 (function(){
   var B=document.body,de=document.documentElement;
-  function off(){return matchMedia('(prefers-reduced-motion: reduce)').matches||B.classList.contains('no-anim')||de.classList.contains('bos-low-power');}
+  function off(){return matchMedia('(prefers-reduced-motion: reduce)').matches;}
   var vis=function(el){if(!el)return false;var r=el.getBoundingClientRect();return r.width>8&&r.height>8&&r.bottom>0&&r.top<innerHeight;};
 })();
 </script>
@@ -7296,7 +7271,7 @@ body.playing-anim .fp-art-wrap{animation:none}
 <script id="bos-v16-player-motion-script">
 (function(){
   var B=document.body,de=document.documentElement;
-  function off(){return matchMedia('(prefers-reduced-motion: reduce)').matches||B.classList.contains('no-anim')||de.classList.contains('bos-low-power');}
+  function off(){return matchMedia('(prefers-reduced-motion: reduce)').matches;}
   var fpPlay=document.getElementById('fp-play'),miniPlay=document.getElementById('mini-play');
   /* Both of these read the app's own play/pause icon, which the app derives from the real audio state. */
   function isPlayingIcon(btn){return !!(btn&&btn.querySelector('rect'));}
@@ -7334,7 +7309,6 @@ body.playing-anim .fp-art-wrap{animation:none}
 <script id="bos-v17-pack">
 (function(){"use strict";
 var R=matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
-try{if((navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=3)document.documentElement.classList.add("bos-lite");}catch(e){}
 function label(b){if(b.getAttribute("aria-label")||b.textContent.trim()||b.getAttribute("aria-labelledby"))return;
 var l=b.title||b.dataset.action||b.dataset.nav||b.id||"";l=String(l).replace(/[-_]+/g," ").trim();if(l)b.setAttribute("aria-label",l);}
 function pass(root){try{(root.matches&&root.matches("button")?[root]:[]).concat([].slice.call(root.querySelectorAll?root.querySelectorAll("button"):[])).forEach(label);}catch(e){}}
@@ -7343,7 +7317,7 @@ function stagger(nodes){var n=0;nodes.forEach(function(el){if(n>=14||el.classLis
 el.style.animationDelay=(n*40)+"ms";el.classList.add("bos-in");n++;
 el.addEventListener("animationend",function f(e){if(e.target!==el)return;el.classList.remove("bos-in");el.style.animationDelay="";el.removeEventListener("animationend",f);});});}
 function flush(){t=0;var items=[];q.forEach(function(n){if(n.nodeType!==1)return;pass(n);
-if(!R&&!document.body.classList.contains("no-anim")){if(n.matches&&n.matches(".row-item,.card"))items.push(n);
+if(!R){if(n.matches&&n.matches(".row-item,.card"))items.push(n);
 else if(n.querySelectorAll)items.push.apply(items,n.querySelectorAll(".row-item,.card"));}});q=[];if(items.length)stagger(items);}
 function boot(){pass(document.body);var v=document.getElementById("view-scroll");if(!v)return;
 new MutationObserver(function(m){m.forEach(function(r){q.push.apply(q,r.addedNodes);});if(!t)t=requestAnimationFrame(flush);}).observe(v,{childList:true,subtree:true});
@@ -7404,7 +7378,7 @@ document.readyState==="loading"?document.addEventListener("DOMContentLoaded",boo
 /* ripple on every button type */
 var SEL=".btn,.icon-btn,.ctrl-btn,.nav-item,.bn-item,.stab,.seg-opt,.bos-btn,.bos-chip,.bos-v9-fx-actions button,.bos-v9-fx-close,.bos-lang,.bos-mood-close,.row-item,.card-play";
 if(!R)document.addEventListener("pointerdown",function(e){
-var b=e.target.closest&&e.target.closest(SEL);if(!b||b.disabled||document.body.classList.contains("no-anim"))return;
+var b=e.target.closest&&e.target.closest(SEL);if(!b||b.disabled)return;
 var r=b.getBoundingClientRect(),d=Math.max(r.width,r.height)*2.2,x=document.createElement("span");
 b.classList.add("bos-rip-host");x.className="bos-rip";
 x.style.cssText="width:"+d+"px;height:"+d+"px;left:"+(e.clientX-r.left-d/2)+"px;top:"+(e.clientY-r.top-d/2)+"px";
@@ -7427,10 +7401,7 @@ b.appendChild(x);x.addEventListener("animationend",function(){x.remove();});setT
 #view-scroll{transition:transform .6s var(--ease-out),filter .6s var(--ease-out)}
 
 
-html.bos-lite .glass-1{}
-html.bos-lite .glass-2,html.bos-lite .glass-3{}
 @media(prefers-reduced-motion:reduce){.bos-in,.toast{animation:none}#view-scroll{transition:none}body:has(#full-player.open) #view-scroll,body:has(#queue-panel.open) #view-scroll{transform:none;filter:none}}
-body.no-anim .bos-in{animation:none}
 </style>
 <style id="bos-qa-fx-css">
 #bos-pop,.bos-v9-fx-panel{--sp:linear(0.000,0.057,0.192,0.362,0.534,0.691,0.820,0.920,0.990,1.035,1.059,1.068,1.066,1.058,1.047,1.035,1.024,1.014,1.007,1.002,0.998,0.996,0.995,0.995,0.996,0.997,0.997,0.998,0.999,0.999,1);transform-origin:var(--ox,50%) var(--oy,100%)}
@@ -7464,7 +7435,6 @@ body:has(#bos-pop.open) #bos-fab::after{animation:none}
 @keyframes bosBump{40%{transform:scale(1.35);color:var(--accent)}}
 .bos-v9-fx-value.bump{display:inline-block;animation:bosBump .4s var(--sp)}
 @media(prefers-reduced-motion:reduce){#bos-pop,.bos-v9-fx-panel{filter:none;transition:opacity .15s}#bos-fab::after{animation:none}#bos-pop.open *,.bos-v9-fx-panel.open *{animation:none!important}}
-body.no-anim #bos-fab::after{animation:none}
 </style>
 <style id="bos-v20-css">
 html.bos-vt #view-scroll{view-transition-name:bos-page}
@@ -7623,7 +7593,6 @@ document.addEventListener("visibilitychange",function(){document.documentElement
 .bos-ob-ripple{will-change:transform,opacity;}
 #bos-fab::after{box-shadow:none!important;border:2px solid var(--accent);animation:bosRing 3.4s ease-out infinite!important;}
 @keyframes bosRing{0%{transform:scale(1);opacity:.55}70%,100%{transform:scale(1.55);opacity:0}}
-html.bos-low-power #bos-fab::after{animation:none!important;opacity:0;}
 :root{--lc-hi:#fff;--lc-hi-a:rgba(255,255,255,.97);--lc-mid:rgba(255,255,255,.8);--lc-lo:rgba(255,255,255,.58);--lc-dim:rgba(255,255,255,.4);}
 [data-theme="light"]{--lc-hi:#0d0d18;--lc-hi-a:rgba(13,13,24,.97);--lc-mid:rgba(13,13,24,.8);--lc-lo:rgba(13,13,24,.52);--lc-dim:rgba(13,13,24,.38);}
 .seg-opt,.stab,.crossfade-off-btn{transition-property:background-color,color,transform,border-color,box-shadow,opacity!important;}
@@ -8612,7 +8581,7 @@ window.__bosLyricFix={fixLine:fixLine,demoji:demoji};
         if (idx >= order.length) { if (!live) { over = true; timers.forEach(clearTimeout); no(new Error('all failed')); } return; }
         var h = order[idx++], c = new AbortController(), t0 = performance.now();
         live++; ctls.push(c);
-        var tm = setTimeout(function(){ c.abort(); }, 3500);
+        var tm = setTimeout(function(){ c.abort(); }, 2500);
         fetch(urlFn(h), { signal: c.signal })
           .then(function(r){ if (!r.ok) throw new Error('bad'); return r.json(); })
           .then(function(d){
@@ -8649,7 +8618,7 @@ window.__bosLyricFix={fixLine:fixLine,demoji:demoji};
   function ytDur(s){ return String(s || '').split(':').reduce(function(a, x){ return a * 60 + (+x || 0); }, 0); }
   // YouTube results page, fetched through your Booster worker (/p?u=) and parsed
   function ytWebSearch(term){
-    var c = new AbortController(), tm = setTimeout(function(){ c.abort(); }, 8000);
+    var c = new AbortController(), tm = setTimeout(function(){ c.abort(); }, 4500);
     return fetch('https://www.youtube.com/results?hl=en&gl=IN&sp=EgIQAQ%253D%253D&search_query=' + enc(term), { signal: c.signal })
       .then(function(r){ if (!r.ok) throw 0; return r.text(); })
       .then(function(h){
@@ -8885,7 +8854,7 @@ window.__bosLyricFix={fixLine:fixLine,demoji:demoji};
     Y.next = function(){
       var tok = ++Y.tok;
       var ut = function(x){ return Y.tried.indexOf(x) < 0; };
-      var h = ((YTM_ENDPOINT && ut('ytm')) ? 'ytm' : null) || ranked().filter(function(x){ return ut(x) && !isCool(x); })[0] || (ut('pp') ? 'pp' : null) || ranked().filter(ut)[0];   /* ORDER: 1) your Worker 2) Invidious 3) Piped */
+      var h = ((YTM_ENDPOINT && ut('ytm') && !window.__boosterDown()) ? 'ytm' : null) || ranked().filter(function(x){ return ut(x) && !isCool(x); })[0] || (ut('pp') ? 'pp' : null) || ranked().filter(ut)[0];   /* ORDER: 1) your Worker 2) Invidious 3) Piped */
       if (!h) {
         // AUTO-RETRY: every source failed -> try the SAME song again (up to MAX_RETRY times) before giving up
         var MAX_RETRY = 3, sid = Y.id;
@@ -8947,10 +8916,11 @@ window.__bosLyricFix={fixLine:fixLine,demoji:demoji};
         if ((a.readyState >= 1 || (a.buffered && a.buffered.length)) && el < 14000) { Y.wd = setTimeout(wdChk, 1500); return; }
         Y.fail(tok);
       };
-      Y.wd = setTimeout(wdChk, h === 'pp' ? 9000 : 6000);
+      Y.wd = setTimeout(wdChk, h === 'pp' ? 8000 : h === 'ytm' ? 3500 : 5000);
     };
     Y.fail = function(tok){
       if (tok !== Y.tok || !Y.on || Y.mode !== 'audio') return;
+      if (Y.cur === 'ytm') { try { window.__boosterMarkDown(); } catch (e) {} }
       markBad(Y.cur || Y.host);
       var pos = Y.au && Y.au.currentTime; if (pos > 1) Y.base = pos;   // keep the position when a server drops mid-song
       Y.next();
@@ -9236,12 +9206,12 @@ window.__bosLyricFix={fixLine:fixLine,demoji:demoji};
   // Used by the main Search page and by favorites / history / queue (through Player.play)
   /* BOOSTER server first for playlists / artist songs (/list), old servers stay as fallback */
   function bList(kind, id){
-    var S = window.BOOSTER_DL_SERVER; if (!S) return Promise.reject(0);
+    var S = window.BOOSTER_DL_SERVER; if (!S || window.__boosterDown()) return Promise.reject(0);
     var ac = new AbortController(), tm = setTimeout(function(){ ac.abort(); }, 9000);
     return fetch(S + '/list?kind=' + kind + '&id=' + enc(id), { signal: ac.signal })
       .then(function(r){ clearTimeout(tm); if (!r.ok) throw 0; return r.json(); })
       .then(function(l){ if (!Array.isArray(l) || !l.length) throw 0; return l; })
-      .catch(function(e){ clearTimeout(tm); throw e; });
+      .catch(function(e){ clearTimeout(tm); window.__boosterMarkDown(); throw e; });
   }
   var collection0 = collection, musicPlaylistSongs0 = musicPlaylistSongs;
   collection = function(kind, id){ return bList(kind === 'channel' ? 'channel' : 'playlist', id).catch(function(){ return collection0(kind, id); }); };
@@ -9877,18 +9847,9 @@ html:not(.bos-vt) #view-scroll.nav-enter{animation:bosNavFade2 .2s ease-out both
 #view-scroll{overscroll-behavior:contain;scroll-behavior:auto}
 :is(.icon-btn,.ctrl-btn):active{opacity:.7}
 .row-item:active{background:var(--glass-1-bg)}
-body.bos-hidden *,body.bos-hidden *::before,body.bos-hidden *::after{animation-play-state:paused!important}
+
 @media (hover:none){.card:hover,.row-item:hover{transform:none}}
 
-html.bos-low-power :is(.glass-1,.glass-2,.glass-3,#mini-player,#bottom-nav,#topbar,.modal-box,#queue-panel,.toast,.fp-side-actions),
-html.bos-lite :is(.glass-1,.glass-2,.glass-3,#mini-player,#bottom-nav,#topbar,.modal-box,#queue-panel,.toast,.fp-side-actions){}
-html.bos-low-power :is(#mini-player,#bottom-nav,#queue-panel,.modal-box){background-color:var(--bg-1)!important}
-html.bos-low-power #full-player .fp-bg,html.bos-lite #full-player .fp-bg{filter:blur(26px) saturate(1.3) brightness(.6)!important;transform:scale(1.15)!important}
-html.bos-low-power #ambient .amb-layer,html.bos-lite #ambient .amb-layer{filter:blur(18px) saturate(1.2) brightness(.75)!important}
-html.bos-low-power body.playing-anim .fp-art-wrap,html.bos-lite body.playing-anim .fp-art-wrap{animation:none!important}
-html.bos-low-power #ambient .amb-tint,html.bos-lite #ambient .amb-tint{animation:none!important}
-html.bos-low-power img.bos-art-in,html.bos-lite img.bos-art-in{animation-duration:.15s}
-html.bos-low-power .card,html.bos-lite .card{transition-duration:.12s!important}
 @media (prefers-reduced-motion:reduce){img.bos-art-in,html:not(.bos-vt) #view-scroll.nav-enter{animation:none!important}}
 </style>
 <script id="bos-v31-premium-js">
@@ -9898,8 +9859,6 @@ document.addEventListener('load',function(e){var t=e.target;
   if(!t||t.tagName!=='IMG'||t.dataset.bosShown||!t.closest||!t.closest('.card-art,.row-art,.detail-art'))return;
   t.dataset.bosShown='1';requestAnimationFrame(function(){t.classList.add('bos-art-in');});
 },true);
-try{var c=navigator.connection||{};
- if(c.saveData||(navigator.deviceMemory&&navigator.deviceMemory<=2))document.documentElement.classList.add('bos-low-power','bos-lite');}catch(e){}
 })();
 </script>
 <script id="bos-v32-yt-meta">
@@ -9953,59 +9912,6 @@ var res=document.addEventListener('pointerdown',function(e){
 .pty-chip.active{background:var(--accent);color:#fff;border-color:transparent}
 </style>
 
-<style id="bos-lite-css">
-
-html.bos-lite .fp-art-wrap,html.bos-lite #bos-fab::after,html.bos-lite [class*="orb"],html.bos-lite [class*="drift"]{animation:none!important}
-html.bos-lite *{will-change:auto!important;scroll-behavior:auto!important}
-html.bos-lite .row-item{content-visibility:auto;contain-intrinsic-size:auto 64px}
-html.bos-lite *,html.bos-lite *::before,html.bos-lite *::after{text-shadow:none!important}
-html.bos-hidden *,html.bos-hidden *::before,html.bos-hidden *::after{animation-play-state:paused!important}
-</style>
-<script id="bos-lite-js">
-(function(){
-  'use strict';
-  const KEY='boosterLiteMode'; // 'on' | 'off' | (unset = auto)
-  const de=document.documentElement;
-  let pref=null; try{pref=localStorage.getItem(KEY);}catch(_){}
-  const weak=()=>{
-    const coarse=matchMedia('(pointer:coarse)').matches;
-    const mem=navigator.deviceMemory||8, cores=navigator.hardwareConcurrency||8;
-    return (coarse&&(mem<=4||cores<=6))||mem<=2||cores<=2;
-  };
-  const isLite=()=>pref==='on'||(pref!=='off'&&weak());
-  function paint(){de.classList.toggle('bos-lite',isLite());}
-
-  /* Cap oversized blur values: copy those rules into a lite-only stylesheet (look stays, GPU cost drops). */
-  function buildCaps(){
-    const out=[];
-    const cap=(v,max)=>v.replace(/blur\((\d+(?:\.\d+)?)px\)/g,(m,n)=>+n>max?'blur('+max+'px)':m);
-    const walk=rules=>{for(const r of rules){
-      try{
-        if(r.cssRules&&!r.selectorText){walk(r.cssRules);continue;}
-        if(!r.style||!r.selectorText)continue;
-        const bf=r.style.getPropertyValue('backdrop-filter')||r.style.getPropertyValue('-webkit-backdrop-filter');
-        const fl=r.style.getPropertyValue('filter');
-        let css='';
-        if(bf&&/blur\((\d+)/.test(bf)&&Math.max(...[...bf.matchAll(/blur\((\d+(?:\.\d+)?)px\)/g)].map(m=>+m[1]))>10){const c=cap(bf,10);css+='backdrop-filter:'+c+'!important;-webkit-backdrop-filter:'+c+'!important;';}
-        if(fl&&Math.max(0,...[...fl.matchAll(/blur\((\d+(?:\.\d+)?)px\)/g)].map(m=>+m[1]))>24){css+='filter:'+cap(fl,24)+'!important;';}
-        if(css){const sel=r.selectorText.split(/,(?![^(]*\))/).map(x=>'html.bos-lite '+x.trim()).join(',');out.push(sel+'{'+css+'}');}
-      }catch(_){}
-    }};
-    for(const ss of document.styleSheets){try{walk(ss.cssRules);}catch(_){}}
-    if(out.length){const st=document.createElement('style');st.id='bos-lite-caps';st.textContent=out.join('\n');document.head.appendChild(st);}
-  }
-
-  function setLite(v){pref=v?'on':'off';try{localStorage.setItem(KEY,pref);}catch(_){}paint();
-    try{if(typeof toast==='function')toast(v?'⚡ Lite Mode ON (smoother)':'Lite Mode OFF (full effects)');}catch(_){}}
-  function wire(){
-    buildCaps();
-    paint();
-  }
-  document.addEventListener('visibilitychange',()=>de.classList.toggle('bos-hidden',document.hidden));
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();
-  window.BoosterLite={set:setLite,isLite};
-})();
-</script>
 
 
 <style id="bos-final-backdrop">
@@ -10121,7 +10027,7 @@ var fp=$id('full-player'), lv=$id('lyrics-view');
 if(!fp||!lv) return;
 var wrap=fp.querySelector('.fp-art-wrap'), fpArt=$id('fp-art'), fpTitle=$id('fp-title'), fpArtist=$id('fp-artist'), fpHeart=$id('fp-heart');
 var canWA=typeof Element.prototype.animate==='function'&&window.CSS&&CSS.supports&&CSS.supports('translate','1px');
-var noAnim=function(){return document.body.classList.contains('no-anim');};
+var noAnim=function(){return false;};
 var noLyAnim=function(){return false;}; /* lyrics morph/shift animations stay ON */
 var EASE='cubic-bezier(.22,1,.36,1)', EASE2='cubic-bezier(.32,.72,0,1)';
 
@@ -10447,10 +10353,6 @@ try{(function(){
 /* Mini <-> full player: keep the animation frame cheap */
 html.bos-sheet-busy #ambient,html.bos-sheet-busy #ambient *,html.bos-sheet-busy .orb,html.bos-sheet-busy #view-scroll *{animation-play-state:paused!important}
 html.bos-sheet-busy #view-scroll{pointer-events:none}
-/* Lite tier: no blur rasterisation during the slide; the blurred backdrop fades in once it has settled */
-html.bos-lt #full-player{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-html.bos-lt #full-player.bos-busy{contain:layout paint;backface-visibility:hidden}
-html.bos-lt #full-player .fp-controls>*{animation:none!important}
 </style>
 <style id="bos-switch-fast">
 /* Lyrics / Queue open+close: one fast compositor-only transition, no pop, no blur re-raster */
@@ -10568,78 +10470,6 @@ html body #full-player.bos-busy .fp-art-wrap{position:relative;z-index:6;}  /* a
 @media(min-width:700px){#bos-sm{align-items:center}.bos-sm-box{border-radius:28px;border-bottom:1px solid var(--sep)}}
 @media(prefers-reduced-motion:reduce){.bos-sm-box{transition:none}}
 </style>
-<script id="bos-perf-governor">
-/* AUTO PERFORMANCE GOVERNOR
-   Level 0 = full effects, 1 = Lite (blur capped, less glow), 2 = Low power (almost no animation).
-   Start level comes from the phone's RAM / cores. While the app runs it watches real frame rate (a phone that overheats
-   gets throttled, so FPS drops), the browser's CPU-pressure signal (where available) and the battery, and moves the level
-   up when the phone struggles. It moves back down slowly once the phone is smooth and cool again. Browsers cannot read the
-   real temperature, so this is the closest signal. Manual: localStorage boosterLiteMode = 'on' / 'off'. */
-(function(){
-  'use strict';
-  var de=document.documentElement, KEY='boosterLiteMode';
-  var rt=0, lvl=-1, pl=0, batt=0, lastChange=Date.now(), lastUp=0;
-  try{ rt=Math.min(2,Math.max(0,+sessionStorage.getItem('bos_perf_rt')||0)); }catch(e){}
-  function pref(){ try{ return localStorage.getItem(KEY); }catch(e){ return null; } }
-  function ramBase(){
-    var m=navigator.deviceMemory, c=navigator.hardwareConcurrency||0, b=0;
-    if(m) b=m<=2?2:(m<=4?1:0);                 /* Chrome reports 2 for a ~2.4 GB phone */
-    if(c&&c<=4) b=Math.max(b,1);
-    try{ var cn=navigator.connection; if(cn&&cn.saveData) b=Math.max(b,1); }catch(e){}
-    return b;
-  }
-  function floor(){
-    var p=pref(), b=ramBase();
-    if(p==='on') b=Math.max(b,1); else if(p==='off') b=0;
-    return Math.max(b,batt);
-  }
-  function want(){ return Math.min(2,Math.max(floor(),rt,pl)); }
-  function consistent(){ return de.classList.contains('bos-lite')===(lvl>=1)&&de.classList.contains('bos-low-power')===(lvl>=2); }
-  var applying=false;
-  function apply(force){
-    var n=want(); if(n===lvl&&!force&&consistent()) return;
-    applying=true; lvl=n;
-    de.classList.toggle('bos-lite',n>=1); de.classList.toggle('bos-low-power',n>=2);
-    window.BOOSTER_PERF=n; applying=false;
-  }
-  function setRt(n){ n=Math.max(0,Math.min(2,n)); if(n===rt) return; rt=n; lastChange=Date.now(); try{ sessionStorage.setItem('bos_perf_rt',String(rt)); }catch(e){} apply(); }
-  /* other scripts may toggle these classes: put them back to the governor's level */
-  try{ new MutationObserver(function(){ if(!applying&&lvl>=0&&!consistent()) apply(true); }).observe(de,{attributes:true,attributeFilter:['class']}); }catch(e){}
-  /* 1) browser CPU pressure (thermal-aware on supported browsers) */
-  try{
-    if(window.PressureObserver){
-      var po=new PressureObserver(function(r){ var st=r&&r.length?r[r.length-1].state:'nominal'; pl=(st==='critical'||st==='serious')?2:(st==='fair'?1:0); apply(); });
-      var pr=po.observe('cpu',{sampleInterval:2000}); if(pr&&pr.catch) pr.catch(function(){});
-    }
-  }catch(e){}
-  /* 2) battery saver behaviour */
-  try{
-    if(navigator.getBattery) navigator.getBattery().then(function(b){
-      var u=function(){ batt=(!b.charging&&b.level<=0.15)?1:0; apply(); };
-      b.addEventListener('levelchange',u); b.addEventListener('chargingchange',u); u();
-    }).catch(function(){});
-  }catch(e){}
-  /* 3) real frame rate: slow frames = hot / throttled / overloaded phone */
-  var frames=0,t0=0,slow=0,fast=0,run=false,warm=Date.now()+8000;
-  function tick(t){
-    if(!run) return;
-    frames++; if(!t0) t0=t;
-    if(t-t0>=3000){
-      var fps=frames*1000/(t-t0); frames=0; t0=t; var now=Date.now();
-      if(now>warm){
-        if(fps<38){ slow++; fast=0; } else if(fps>=54){ fast++; slow=0; } else { slow=0; fast=0; }
-        if(slow>=2&&now-lastUp>10000&&rt<2){ lastUp=now; slow=0; setRt(Math.max(rt,lvl)+1); }
-        else if(fast>=10&&now-lastChange>90000&&rt>0&&pl===0){ fast=0; setRt(rt-1); }
-      }
-    }
-    requestAnimationFrame(tick);
-  }
-  document.addEventListener('visibilitychange',function(){ run=!document.hidden; frames=0; t0=0; slow=0; fast=0; if(run) requestAnimationFrame(tick); });
-  window.addEventListener('storage',function(e){ if(e.key===KEY) apply(true); });
-  run=!document.hidden; apply(true); if(run) requestAnimationFrame(tick);
-  window.BosPerf={level:function(){ return lvl; },reset:function(){ rt=0; try{ sessionStorage.removeItem('bos_perf_rt'); }catch(e){} apply(true); }};
-})();
-</script>
 <!-- ===== BoosterOS: live song-colour gradient + smooth page fade (light, 4GB-friendly) ===== -->
 <style id="bos-livebg-css">
 @view-transition{navigation:auto}
@@ -10682,11 +10512,10 @@ html body #ambient>.bos-lg-wrap{display:block!important;position:absolute;inset:
   try{new MutationObserver(function(){if(cur>=0){var a=layers[cur].getAnimations();if(!a.length)layers[cur].style.opacity=String(op());}}).observe(B0,{attributes:true,attributeFilter:['data-theme']});}catch(e){}
   paint();
   /* slow drift = the "live" feel; one transform animation on one wrapper */
-  function lite(){return R.classList.contains('bos-lite')||R.classList.contains('bos-low-power');}
   function startDrift(){
-    if(drift||!wrap.animate||rm.matches||R.classList.contains('bos-low-power'))return;
+    if(drift||!wrap.animate||rm.matches)return;
     drift=wrap.animate([{transform:'translate3d(0,0,0) scale(1)'},{transform:'translate3d(-3.5%,3%,0) scale(1.07)'}],
-      {duration:lite()?42000:28000,iterations:Infinity,direction:'alternate',easing:'ease-in-out'});
+      {duration:28000,iterations:Infinity,direction:'alternate',easing:'ease-in-out'});
     pause();
   }
   function pause(){
@@ -10714,21 +10543,6 @@ html body #ambient>.bos-lg-wrap{display:block!important;position:absolute;inset:
 })();
 </script>
 
-<style id="bos-no-anim-css">
-/* ===== Animations/transitions removed everywhere EXCEPT the full player + lyrics page =====
-   Durations are collapsed to ~0 (not "none") so animationend/transitionend still fire and
-   any JS that waits on them (closing modals, toasts, etc.) keeps working. */
-*:not(#full-player):not(#full-player *):not(#lyrics-view):not(#lyrics-view *),
-*:not(#full-player):not(#full-player *):not(#lyrics-view):not(#lyrics-view *)::before,
-*:not(#full-player):not(#full-player *):not(#lyrics-view):not(#lyrics-view *)::after{
-  animation-duration:.001ms !important;
-  animation-delay:0s !important;
-  animation-iteration-count:1 !important;
-  transition-duration:.001ms !important;
-  transition-delay:0s !important;
-  scroll-behavior:auto !important;
-}
-</style>
 
 <style id="bos-home-matched-player-background">
 /* Keep the full player and lyrics on the same album-art ambient treatment as Home.
